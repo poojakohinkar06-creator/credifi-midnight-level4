@@ -18,6 +18,38 @@ flag are **witness-only** and never cross the private/public boundary.
 
 ---
 
+## Problem statement
+
+Lending decisions depend on sensitive financial facts — income, credit history,
+and whether an applicant has previously defaulted. Sharing this data directly
+with a lender is invasive and creates large attack surface: the very facts a
+user needs to keep private are the ones a lender asks for.
+
+CrediFi addresses the question: *how can a lender verify loan eligibility and
+risk without the applicant having to reveal their exact income or private
+financial history?*
+
+Borrowers deserve mainstream financial services — access to credit — without
+surrendering their most sensitive data to every lender they apply to.
+
+## Solution
+
+CrediFi lets an applicant prove to a lender that a **verified** financial
+credential satisfies a lending requirement using a **zero-knowledge proof** on
+the Midnight Network. The evaluation (income ≥ threshold, no prior default) runs
+entirely **inside the ZK circuit** on private witnesses. The lender can verify
+with confidence that the signed credential came from a trusted issuer and meets
+the criteria, while the applicant reveals **only** a yes/no eligibility summary.
+
+- Built in [Compact](https://docs.midnight.network/compact), Midnight's
+  privacy-preserving smart-contract language.
+- Credentials are signed by a trusted issuer with Schnorr signatures over
+  Jubjub and verified in-circuit (tamper-evident + non-replayable).
+- Only binary outcome flags are written to the ledger; the exact income and
+  default flag never cross the private/public boundary.
+
+---
+
 ## Highlights
 
 - **Private-by-design contract** written in [Compact](https://docs.midnight.network/compact),
@@ -152,6 +184,82 @@ or proof. This is enforced and proven by the contract privacy tests.
 - **Lace wallet** integration for genuine on-chain submissions.
 - Issuer runs as a trusted **backend service** (the mock issuer's deterministic
   secret is simulation-only and must never live in client code).
+
+---
+
+## Testing
+
+The core guarantees — correctness **and** privacy — are verified continuously:
+
+- **Contract tests (17)** in `contract/src/test/`:
+  - `eligibility.test.ts` — the full eligibility matrix, multi-lender records,
+    issuer authentication, and admin governance.
+  - `privacy.test.ts` — proves the exact income, default flag, and signature
+    material never appear in any serialized public state, and that distinct
+    users are keyed by 32-byte identity hashes.
+- **Frontend engine tests (7)** in `frontend/src/test/engine.test.ts` — re-run
+  the same matrix through the actual compiled contract in a node environment
+  (needed because the WASM runtime does not run inside jsdom), plus a privacy
+  guarantee on the returned outcome shape.
+- **App smoke tests (2)** in `frontend/src/test/App.test.tsx` — the dashboard
+  renders all sections and the simulated wallet connects.
+
+```bash
+npm run contract:test   # 17 tests
+npm run frontend:test   # engine + app smoke tests
+```
+
+## CI/CD
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to
+`main` and pull request:
+
+1. Installs the pinned Compact devtools + compiler (0.31.1).
+2. `npm ci`, then compiles the Compact contract to regenerate the managed
+   bindings and zkir artifacts.
+3. Runs contract typecheck / test / build.
+4. Runs frontend typecheck / build / test.
+
+This mirrors the validated local toolchain so every change is verified against
+real compiled contract artifacts.
+
+## Demo
+
+Run the local, in-browser demo of the official compiled contract:
+
+```bash
+npm run frontend:dev   # http://localhost:5173
+```
+
+The dashboard guides you through **connect wallet → financial credential →
+lender requirement → outcome**, computing genuine eligibility results from the
+real compiled circuit (the exact income stays witness-only). A **demo video** is
+planned; see [Roadmap](#roadmap--deferred) and `LEVEL4_CHECKLIST.md`.
+
+## Preprod deployment & contract address
+
+On-chain deployment on Midnight **Preprod** is documented in
+[docs/deploy-onchain.md](./docs/deploy-onchain.md) but is **not yet executed** —
+it requires a running proof server (`midnight_bn254`, needs Docker) and a funded
+Preprod wallet, then wiring the provider stack needed by `midnight-js-contracts`
+4.x.
+
+Per the project's honesty rules the contract address is **never fabricated**:
+
+- `CONTRACT_ADDRESS` in `contract/src/config.ts` and `frontend/src/config.ts`
+  retains the placeholder `TODO_PASTE_DEPLOYED_CONTRACT_ADDRESS_AFTER_DEPLOY`.
+- `docs/contract-address.txt` records the truthful "not deployed yet" status.
+- `npm run deploy` runs a readiness preflight and reports the true environment
+  state instead of emitting a fake address.
+
+Once a real deployment exists, the genuine address is pasted into those configs
+and recorded in `docs/contract-address.txt`.
+
+## X (Twitter) profile
+
+A project X profile is planned but **not yet created** — the handle/social URL
+is intentionally left blank here so no fabricated link is recorded. Track this
+under **MANUAL ACTION REQUIRED** in `LEVEL4_CHECKLIST.md`.
 
 ---
 
