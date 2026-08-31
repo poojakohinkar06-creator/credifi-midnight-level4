@@ -1,0 +1,15 @@
+# CrediFi — Deployed Contract Address (Preprod)
+
+**Status: NOT DEPLOYED YET**
+
+A genuine on-chain deployment on Midnight Preprod has **not** been performed.
+It requires a running proof server (`midnight_bn254`, needs Docker engine) and a
+funded Preprod wallet.
+
+As a result, `CONTRACT_ADDRESS` in `contract/src/config.ts` and
+`frontend/src/config.ts` retains its placeholder value
+`TODO_PASTE_DEPLOYED_CONTRACT_ADDRESS_AFTER_DEPLOY`.
+
+Per the project's honesty rules, **no fake address is recorded here**. After a
+real deployment the actual contract address will be pasted into this file and
+into the config placeholders above.
