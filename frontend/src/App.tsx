@@ -1,248 +1,239 @@
 import { useState } from "react";
 import { CrediFiEngine } from "./engine";
-import { connectWallet, walletLabel, type WalletState } from "./wallet";
-import { CONTRACT_ADDRESS, DEFAULT_LENDER_REF, NETWORK_ID, MOCK_ISSUER_NAME } from "./config";
+import { connectWallet, WalletError, type WalletErrorCode, type WalletState } from "./wallet";
+import { DEFAULT_LENDER_REF, MOCK_ISSUER_NAME } from "./config";
 
-type Screen = "landing" | "credential" | "requirement" | "result";
+import { Navbar } from "./components/Navbar";
+import { Hero } from "./components/Hero";
+import { HowItWorks } from "./components/HowItWorks";
+import { PrivacySection } from "./components/PrivacySection";
+import { Footer } from "./components/Footer";
+import { ProgressSteps, type StepKey } from "./components/ProgressSteps";
+import { WalletStatus } from "./components/WalletStatus";
+import { CredentialCard } from "./components/CredentialCard";
+import { RequirementForm } from "./components/RequirementForm";
+import { VerificationStatus } from "./components/VerificationStatus";
+import { EligibilityResult } from "./components/EligibilityResult";
+import { Card } from "./components/Card";
+
+import type { VerificationOutcome } from "./engine";
+
+type Screen = "landing" | "credential" | "requirement" | "verifying" | "result";
+
+const stepOf: Record<Screen, StepKey> = {
+  landing: "credential",
+  credential: "credential",
+  requirement: "requirement",
+  verifying: "verifying",
+  result: "result",
+};
 
 export default function App() {
   const [engine] = useState(() => new CrediFiEngine());
   const [screen, setScreen] = useState<Screen>("landing");
   const [wallet, setWallet] = useState<WalletState | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [walletError, setWalletError] = useState<{ code: WalletErrorCode; message: string } | null>(null);
 
+  // Private credential witness values (never displayed as public amounts).
   const [monthlyIncome, setMonthlyIncome] = useState(65000);
   const [previousDefault, setPreviousDefault] = useState(false);
 
+  // Lender-facing requirements (public).
   const [minimumIncome, setMinimumIncome] = useState(50000);
   const [requireNoDefault, setRequireNoDefault] = useState(true);
   const [lenderRef, setLenderRef] = useState(DEFAULT_LENDER_REF);
 
-  const [outcome, setOutcome] = useState<ReturnType<CrediFiEngine["verify"]> | null>(null);
+  const [outcome, setOutcome] = useState<VerificationOutcome | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const connected = wallet !== null;
+  const currentStep = stepOf[screen];
 
-  async function handleConnect() {
-    const state = await connectWallet();
-    setWallet(state);
-    setScreen("credential");
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function handleVerify() {
+  async function handleConnect() {
+    if (isConnecting || connected) return;
+    setIsConnecting(true);
+    setWalletError(null);
     setError(null);
     try {
-      const result = engine.verify(
-        { monthlyIncome, previousDefault },
-        { minimumIncome, requireNoDefault, lenderRef },
-        wallet?.holderSecret ?? "demo-holder",
-      );
-      setOutcome(result);
-      setScreen("result");
+      const state = await connectWallet();
+      setWallet(state);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      const message = e instanceof Error ? e.message : String(e);
+      const code = e instanceof WalletError ? e.code : "connection-error";
+      setWalletError({ code, message });
+      setError(message);
+    } finally {
+      setIsConnecting(false);
     }
   }
 
+  function handleDisconnect() {
+    setWallet(null);
+    setOutcome(null);
+    setWalletError(null);
+    setError(null);
+    setScreen("credential");
+  }
+
+  function handleStart() {
+    setScreen("credential");
+    scrollTo("verification");
+  }
+
+  function handleHowItWorks() {
+    scrollTo("how-it-works");
+  }
+
+  function handleRunVerification() {
+    if (!connected || !wallet) {
+      setError("Connect a wallet to continue.");
+      scrollTo("verification");
+      return;
+    }
+    setError(null);
+    setIsVerifying(true);
+    setScreen("verifying");
+    void (async () => {
+      try {
+        // Brief, deliberate pause so the processing state is visible. The
+        // eligibility result itself is NEVER faked — it comes from running the
+        // real compiled CrediFi contract circuit below.
+        await new Promise((r) => setTimeout(r, 1000));
+        const result = engine.verify(
+          { monthlyIncome, previousDefault },
+          { minimumIncome, requireNoDefault, lenderRef },
+          wallet.address,
+        );
+        setOutcome(result);
+        setIsVerifying(false);
+        setScreen("result");
+        scrollTo("verification");
+      } catch (e) {
+        setIsVerifying(false);
+        setScreen("verifying");
+        setError(e instanceof Error ? e.message : String(e));
+        scrollTo("verification");
+      }
+    })();
+  }
+
+  function handleRestart() {
+    setOutcome(null);
+    setError(null);
+    setMinimumIncome(50000);
+    setRequireNoDefault(true);
+    setMonthlyIncome(65000);
+    setPreviousDefault(false);
+    setScreen("credential");
+    scrollTo("verification");
+  }
+
+  const deploymentNote = "On-chain deployment on Midnight Preprod is pending (needs a proof server and funded wallet). Contract address is not fabricated.";
+
   return (
-    <main className="shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Midnight Network • Level 4 Builder</p>
-          <h1>CrediFi</h1>
-          <p className="tagline">
-            Privacy-preserving loan eligibility &amp; risk verification.
-            Lenders learn <em>yes/no</em>; your income never leaves your device.
-          </p>
+    <div className="app" id="app">
+      <Navbar
+        wallet={wallet}
+        connected={connected}
+        isConnecting={isConnecting}
+        onConnect={handleConnect}
+        onDisconnect={handleDisconnect}
+        activeSection={screen === "landing" ? "" : "verification"}
+      />
+
+      <Hero onStart={handleStart} onHowItWorks={handleHowItWorks} />
+
+      <HowItWorks />
+
+      {/* Guided verification flow */}
+      <section className="section flow-section" id="verification">
+        <div className="section-head">
+          <p className="eyebrow">Guided verification</p>
+          <h2>Guided Verification Flow</h2>
         </div>
-        <div className="hero-badges">
-          <span className="badge badge-network">{NETWORK_ID}</span>
-          <span className="badge badge-private">ZK private</span>
-          <span className="badge badge-zk">5 attestation approaches</span>
+
+        {error && (
+          <div className="banner banner-error" role="alert">
+            <span>{error}</span>
+          </div>
+        )}
+
+        <WalletStatus
+          wallet={wallet}
+          connected={connected}
+          isConnecting={isConnecting}
+          error={walletError}
+          onConnect={handleConnect}
+          onDisconnect={handleDisconnect}
+        />
+
+        <ProgressSteps current={currentStep} />
+
+        <div className="flow-panels">
+          <div className={`flow-panel ${currentStep === "credential" ? "is-active" : ""}`}>
+            <CredentialCard
+              issuerName={MOCK_ISSUER_NAME}
+              verified
+              monthlyIncome={monthlyIncome}
+              previousDefault={previousDefault}
+              onIncomeChange={(v) => {
+                setMonthlyIncome(Number.isNaN(v) || v < 0 ? 0 : v);
+                setOutcome(null);
+              }}
+              onDefaultChange={(v) => {
+                setPreviousDefault(v);
+                setOutcome(null);
+              }}
+              onContinue={() => setScreen("requirement")}
+            />
+          </div>
+
+          <div className={`flow-panel ${currentStep === "requirement" ? "is-active" : ""}`}>
+            <RequirementForm
+              minimumIncome={minimumIncome}
+              requireNoDefault={requireNoDefault}
+              lenderRef={lenderRef}
+              onChange={(u) => {
+                setMinimumIncome(u.minimumIncome);
+                setRequireNoDefault(u.requireNoDefault);
+                setLenderRef(u.lenderRef);
+                setOutcome(null);
+              }}
+              onContinue={handleRunVerification}
+            />
+          </div>
+
+          <div className={`flow-panel ${currentStep === "verifying" ? "is-active" : ""}`}>
+            <VerificationStatus
+              isVerifying={isVerifying}
+              error={screen === "verifying" ? error : null}
+              onRun={handleRunVerification}
+              disabled={!connected}
+            />
+          </div>
+
+          <div className={`flow-panel ${currentStep === "result" ? "is-active" : ""}`}>
+            {outcome ? (
+              <EligibilityResult outcome={outcome} onRestart={handleRestart} />
+            ) : (
+              <Card className="result-empty">
+                <h3>Result</h3>
+                <p>No verification has been run yet. Complete the flow to see your eligibility result.</p>
+              </Card>
+            )}
+          </div>
         </div>
-      </header>
-
-      {error && (
-        <div className="banner banner-error" role="alert">
-          Verification failed: {error}
-        </div>
-      )}
-
-      <section className="steps">
-        {/* 1. Wallet */}
-        <article className={`card ${screen === "landing" ? "active" : ""}`}>
-          <h2>
-            <span className="step">1</span> Connect wallet
-          </h2>
-          {!connected ? (
-            <button className="btn btn-primary" onClick={handleConnect}>
-              Connect wallet
-            </button>
-          ) : (
-            <div className="detail">
-              <dl>
-                <dt>Address</dt>
-                <dd className="mono">{wallet.address}</dd>
-                <dt>Provider</dt>
-                <dd>{walletLabel(wallet)}</dd>
-              </dl>
-              <p className="note">
-                Demo credentials derived in-browser. A real Lace wallet submission would
-                require the proof server to be running; see the deployment docs.
-              </p>
-            </div>
-          )}
-        </article>
-
-        {/* 2. Credential */}
-        <article className={`card ${screen === "credential" ? "active" : ""}`}>
-          <h2>
-            <span className="step">2</span> Your financial credential
-          </h2>
-          <p className="subtitle">
-            Signed by: <code>{MOCK_ISSUER_NAME}</code>. These fields stay <strong>private</strong> —
-            they are only used as circuit witnesses.
-          </p>
-          <div className="form-grid">
-            <label>
-              Gross monthly income
-              <input
-                type="number"
-                min={0}
-                value={monthlyIncome}
-                onChange={(e) => setMonthlyIncome(Number(e.target.value))}
-              />
-              <small>PRIVATE witness — never disclosed</small>
-            </label>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={previousDefault}
-                onChange={(e) => setPreviousDefault(e.target.checked)}
-              />
-              I have previously defaulted on a loan
-            </label>
-          </div>
-          {screen === "credential" && (
-            <div className="row">
-              <button className="btn" onClick={() => setScreen("requirement")}>
-                I have a signed credential →
-              </button>
-            </div>
-          )}
-        </article>
-
-        {/* 3. Lender request */}
-        <article className={`card ${screen === "requirement" ? "active" : ""}`}>
-          <h2>
-            <span className="step">3</span> Lender verification request
-          </h2>
-          <div className="form-grid">
-            <label>
-              Minimum monthly income (threshold)
-              <input
-                type="number"
-                min={0}
-                value={minimumIncome}
-                onChange={(e) => setMinimumIncome(Number(e.target.value))}
-              />
-            </label>
-            <label className="check">
-              <input type="checkbox" checked={requireNoDefault} onChange={(e) => setRequireNoDefault(e.target.checked)} />
-              Require no prior default
-            </label>
-            <label>
-              Lender reference
-              <input value={lenderRef} onChange={(e) => setLenderRef(e.target.value)} />
-            </label>
-          </div>
-          <div className="row">
-            <button className="btn btn-primary" onClick={handleVerify}>
-              Run ZK verification
-            </button>
-          </div>
-          <p className="note">
-            The Exact Income is never sent anywhere: only the boolean outcome becomes public,
-            stored in the contract under your derived holder identity.
-          </p>
-        </article>
-
-        {/* 4 + 5. Proof / outcome, about */}
-        <article className={`card ${screen === "result" ? "active" : ""}`}>
-          <h2>
-            <span className="step">4 / 5</span> Outcome, proof &amp; about
-          </h2>
-
-          {outcome ? (
-            <div className={`result ${outcome.eligible ? "eligible" : "declined"}`}>
-              <p className="verdict">{outcome.eligible ? "ELIGIBLE" : "NOT ELIGIBLE"}</p>
-              <dl>
-                <dt>Income threshold met</dt>
-                <dd>{outcome.incomeSatisfied ? "Yes" : "No"}</dd>
-                <dt>No-prior-default requirement met</dt>
-                <dd>{outcome.defaultRequirementSatisfied ? "Yes" : "No"}</dd>
-                <dt>Threshold requested</dt>
-                <dd>
-                  ${outcome.minimumIncome} / month{outcome.requireNoDefault ? " (no prior default)" : ""}
-                </dd>
-                <dt>Lender reference</dt>
-                <dd>{outcome.lenderRef}</dd>
-                <dt>Holder identity (hash)</dt>
-                <dd className="mono">{outcome.holderAddressHash.slice(0, 24)}…</dd>
-              </dl>
-              <p className="proof-line">Computed by: {outcome.computedBy}</p>
-              <p className="note">
-                Your exact income (<code>${monthlyIncome.toLocaleString()} / month</code>) and default
-                flag never appear in any result record, ledger field, or proof — they were witness-only.
-              </p>
-            </div>
-          ) : (
-            <p className="note">No verification has been run yet.</p>
-          )}
-
-          <div className="about">
-            <h3>How the privacy works</h3>
-            <ul>
-              <li>
-                Your income + default history are signed by a trusted issuer and fed into a Midnight
-                ZK circuit as <strong>witnesses</strong>.
-              </li>
-              <li>
-                The on-chain contract stores only the binary eligibility summary the lender requested:
-                booleans and the threshold.
-              </li>
-              <li>
-                The demo runs the <em>official compiled contract</em> in-process for verifiability;
-                no fabricated or mocked results are produced.
-              </li>
-            </ul>
-            <h3>Deployment status</h3>
-            <p className="note">
-              {CONTRACT_ADDRESS.startsWith("TODO")
-                ? "On-chain deployment on Midnight Preprod requires a running proof server and funded wallet — pending (see docs/deploy). Contract address is NOT fabricated."
-                : `Contract deployed on Preprod at ${CONTRACT_ADDRESS}`}
-            </p>
-            <p className="note">
-              MVP scope: 5 attestation approaches (private income check, default check, eligibility
-              decision, multi-lender verification records, and tamper-evident credential binding —
-              see docs/mvp-scope.md).
-            </p>
-          </div>
-
-          <div className="row">
-            <button className="btn" onClick={() => { setScreen("requirement"); setOutcome(null); setWallet(null); }}>
-              Reset demo
-            </button>
-          </div>
-        </article>
       </section>
 
-      <footer>
-        <p>
-          CrediFi — Privacy-preserving loan eligibility &amp; risk verification on the Midnight
-          Network. Results in this demo are computed by the compiled contract logic, never
-          fabricated.
-        </p>
-      </footer>
-    </main>
+      <PrivacySection />
+
+      <Footer deploymentNote={deploymentNote} />
+    </div>
   );
 }
