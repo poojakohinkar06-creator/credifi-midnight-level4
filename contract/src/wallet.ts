@@ -260,27 +260,48 @@ async function persistWalletState(ctx: WalletContext): Promise<void> {
  * `waitForSyncedState()`) and adds lightweight, observability-only progress
  * logging so the CLI makes it clear the wallet is still syncing. It does NOT
  * change sync behaviour or add any expensive polling.
+ *
+ * Note: persistence happens only AFTER a fully successful sync. Mid-sync
+ * checkpoint persistence was evaluated and deliberately NOT added: serializing
+ * during active sync is SDK-safe, but on Preprod the DUST sub-wallet is the
+ * long-pole, so a mid-sync checkpoint would only persist a partial
+ * (un-synced) wallet and would not avoid the remaining DUST replay on restore.
+ * Persisting only the fully-synced state is the safest supported behavior.
  */
 export async function waitForSynced(ctx: WalletContext): Promise<void> {
   console.log("[CrediFi] wallet sync started (initial Preprod ledger synchronization in progress)");
 
-  // Sample the current facade state every few seconds purely to log progress.
+  // Sample the current facade state every few seconds purely to log progress
+  // across ALL THREE sub-wallets (shielded, dust and unshielded have separate,
+  // independent sync progress that fan in to the facade's waitForSyncedState).
   // `ctx.wallet.state()` returns a snapshot observable, so this is cheap and
   // does not touch the sync pipeline.
   const timer = setInterval(() => {
-    void Rx.firstValueFrom(ctx.wallet.state())
-      .then((s: any) => {
-        const shielded = s?.shielded;
-        const progress = shielded?.progress ?? shielded?.state?.progress;
-        const applied = progress?.appliedIndex;
-        const highest = progress?.highestRelevantIndex;
-        const connected = progress?.isConnected;
-        console.log(
-          `[CrediFi] wallet sync still in progress ` +
-            `(shielded appliedIndex=${applied} highestRelevant=${highest} connected=${connected})`,
-        );
-      })
-      .catch(() => {}); // observability only — never disrupt the sync
+    void (async () => {
+      const s: any = await Rx.firstValueFrom(ctx.wallet.state());
+
+      const shielded = s?.shielded;
+      const shieldedProgress =
+        shielded?.progress ?? (shielded?.state as any)?.progress;
+      const dust = s?.dust;
+      const dustProgress = dust?.progress ?? (dust?.state as any)?.progress;
+      const unshielded = s?.unshielded;
+      const unshieldedProgress =
+        unshielded?.progress ?? (unshielded?.state as any)?.progress;
+
+      console.log(
+        `[CrediFi] wallet sync still in progress ` +
+          `(shielded appliedIndex=${shieldedProgress?.appliedIndex} ` +
+          `highestRelevant=${shieldedProgress?.highestRelevantIndex} ` +
+          `connected=${shieldedProgress?.isConnected} | ` +
+          `dust appliedIndex=${dustProgress?.appliedIndex} ` +
+          `highestRelevant=${dustProgress?.highestRelevantIndex} ` +
+          `connected=${dustProgress?.isConnected} | ` +
+          `unshielded appliedId=${unshieldedProgress?.appliedId} ` +
+          `highestTransactionId=${unshieldedProgress?.highestTransactionId} ` +
+          `connected=${unshieldedProgress?.isConnected})`,
+      );
+    })().catch(() => {}); // observability only — never disrupt the sync
   }, 10_000);
 
   try {
