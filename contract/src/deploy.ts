@@ -209,6 +209,48 @@ async function deploy(): Promise<void> {
   }
 }
 
+/**
+ * Safe sync-only mode: builds/restores the wallet, waits for full sync, and
+ * persists the state to disk. NEVER deploys, NEVER registers NIGHT for DUST,
+ * and NEVER submits an on-chain transaction. Does not require DEPLOY_CONFIRM.
+ */
+async function sync(): Promise<void> {
+  const p = await preflight();
+  printPreflight(p);
+
+  // Password is not needed for syncing (only for deploying); require everything
+  // else: compiled artifacts, live indexer + proof server, and the seed.
+  if (!p.artifacts || !p.indexer || !p.proofServer || !p.seedPresent) {
+    console.error("\n[CrediFi] Sync preconditions not met. Nothing was submitted; nothing persisted.");
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log("\n[CrediFi] Sync-only mode: no deployment will occur. Building wallet from environment seed...");
+
+  const seed = loadDeployerSeed();
+  let ctx: WalletContext | undefined;
+  try {
+    ctx = await buildWallet(seed);
+    await waitForSynced(ctx);
+
+    const addr = unshieldedAddress(ctx);
+    console.log(`[CrediFi] Sync complete. Unshielded wallet address: ${addr}`);
+    console.log(`[CrediFi] NIGHT balance: ${(await nightBalance(ctx)).toString()}`);
+    console.log(`[CrediFi] DUST balance : ${(await dustBalance(ctx)).toString()}`);
+    console.log(
+      "\n[CrediFi] Wallet state persisted to ~/.credifi/wallet-state/preprod-v1.json " +
+        "(if this was a restore it was reused; otherwise it was freshly synchronized).",
+    );
+    console.log(
+      "[CrediFi] No transaction was submitted. Run `npm run deploy` (safe preflight) then, when ready,",
+    );
+    console.log("[CrediFi] `DEPLOY_CONFIRM=true npm run deploy` to perform a real deployment.");
+  } finally {
+    if (ctx) await closeWallet(ctx);
+  }
+}
+
 async function verify(): Promise<void> {
   const p = await preflight();
   printPreflight(p);
@@ -299,11 +341,19 @@ function writeFileOrThrow(file: string, content: string): void {
   writeFileSync(file, content, "utf8");
 }
 
-if (mode === "deploy") {
+if (mode === "deploy" && process.argv[3] === "sync") {
+  await sync();
+} else if (mode === "deploy") {
   await deploy();
+} else if (mode === "sync") {
+  await sync();
 } else if (mode === "verify") {
   await verify();
 } else {
-  console.error("[CrediFi] usage: tsx src/deploy.ts deploy|verify");
+  console.error("[CrediFi] usage: tsx src/deploy.ts deploy|sync|verify");
+  console.error("[CrediFi]   deploy            -> readiness preflight (safe)");
+  console.error("[CrediFi]   deploy sync (or sync) -> sync wallet + persist state (safe, no submission)");
+  console.error("[CrediFi]   verify            -> read on-chain state of a deployed contract");
+  console.error("[CrediFi]   DEPLOY_CONFIRM=true deploy -> real on-chain deployment");
   process.exitCode = 1;
 }
