@@ -1,5 +1,8 @@
 # CrediFi — Privacy-Preserving Loan Eligibility & Risk Verification on Midnight
 
+
+🐦 **Follow the build:** [@KohinkarPo29284 on X](https://x.com/KohinkarPo29284)
+
 CrediFi is a **Level 4 Midnight Builder** project. It lets a user prove to a
 lender that a *verified* financial credential satisfies a lending requirement —
 **income ≥ minimumIncome** and **no previous default** — without ever revealing
