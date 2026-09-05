@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 // ---------------------------------------------------------------------------
 // Runtime configuration for CrediFi on Midnight's Preprod network.
 //
@@ -11,7 +12,7 @@ export const CREDIFI_COMPILED_PATH = new URL("./managed/credifi/zkir", import.me
 
 // Base directory of the compiled CrediFi artifacts. The ZK config provider and
 // the CompiledContract binding read `keys/` and `zkir/` from this directory.
-export const CREDIFI_MANAGED_PATH = new URL("./managed/credifi", import.meta.url).toString();
+export const CREDIFI_MANAGED_PATH = fileURLToPath(new URL("./managed/credifi", import.meta.url));
 
 // Midnight network. Preprod is the public test network used for this MVP.
 export const NETWORK_ID = "preprod";
@@ -37,7 +38,7 @@ export const PROOF_SERVER_URL = `http://${PROOF_SERVER_HOST}:${PROOF_SERVER_PORT
  * fabricated — it is left as a typed placeholder until a genuine deployment
  * exists.
  */
-export const CONTRACT_ADDRESS: string = "TODO_PASTE_DEPLOYED_CONTRACT_ADDRESS_AFTER_DEPLOY";
+export const CONTRACT_ADDRESS: string = "82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b";
 
 // CrediFi demo constants shared across components and tests.
 export const MOCK_ISSUER_ID = 1n;

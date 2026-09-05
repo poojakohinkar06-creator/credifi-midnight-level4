@@ -276,7 +276,7 @@ export async function waitForSynced(ctx: WalletContext): Promise<void> {
   // independent sync progress that fan in to the facade's waitForSyncedState).
   // `ctx.wallet.state()` returns a snapshot observable, so this is cheap and
   // does not touch the sync pipeline.
-  const timer = setInterval(() => {
+      const timer = setInterval(() => {
     void (async () => {
       const s: any = await Rx.firstValueFrom(ctx.wallet.state());
 
@@ -303,18 +303,27 @@ export async function waitForSynced(ctx: WalletContext): Promise<void> {
       );
     })().catch(() => {}); // observability only — never disrupt the sync
   }, 10_000);
+  // NEW: Persist a mid-sync checkpoint every 3 minutes so that
+  // progress is not lost if the process stops (Ctrl+C, crash, or sleep).
+  // serializeState() is safe to call while the wallet is actively syncing.
+  // This allows the wallet to resume from the latest saved checkpoint.
+  const checkpointTimer = setInterval(() => {
+    void persistWalletState(ctx)
+      .then(() => console.log("[CrediFi] (checkpoint) mid-sync progress saved"))
+      .catch(() => {});
+  }, 3 * 60_000);
 
   try {
     await ctx.wallet.waitForSyncedState();
   } finally {
     clearInterval(timer);
+    clearInterval(checkpointTimer);
   }
   console.log("[CrediFi] wallet sync completed");
 
-  // Persist only after a fully successful sync (not partial state).
+  // Final persist after a fully successful sync.
   await persistWalletState(ctx);
 }
-
 /** Prints the unshielded deposit address (used with the Preprod faucet). */
 export function unshieldedAddress(ctx: WalletContext): string {
   return String(ctx.unshieldedKeystore.getBech32Address());

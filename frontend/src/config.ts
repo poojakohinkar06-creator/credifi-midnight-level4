@@ -9,7 +9,7 @@ export const NETWORK_ID = "preprod" as const;
  * MANUAL ACTION REQUIRED: real value goes here after `npm run deploy` succeeds
  * (requires a running proof server). This is NEVER fabricated.
  */
-export const CONTRACT_ADDRESS: string = "TODO_PASTE_DEPLOYED_CONTRACT_ADDRESS_AFTER_DEPLOY";
+export const CONTRACT_ADDRESS: string = "82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b";
 
 /**
  * Demo mode: the web app runs the official compiled CrediFi contract circuits

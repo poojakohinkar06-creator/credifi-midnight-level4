@@ -26,7 +26,8 @@
     "deploy": "tsx src/deploy.ts deploy",
     "verify": "tsx src/deploy.ts verify",
     "build": "rm -rf dist && tsc --project tsconfig.build.json && cp -Rf ./src/managed ./dist/managed && cp ./src/credifi.compact ./src/schnorr.compact ./dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node ./scripts/fix-sdk-finalize.mjs"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.16.0",

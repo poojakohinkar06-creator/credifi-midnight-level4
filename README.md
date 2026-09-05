@@ -13,11 +13,21 @@ Only the *outcome* (which requirements were satisfied and whether the user is
 eligible) is written to the ledger. The exact income and the previous-default
 flag are **witness-only** and never cross the private/public boundary.
 
-> **Deployment status:** on-chain deployment on Midnight **Preprod** is
-> documented but **not yet executed** — it requires a running proof server and a
-> funded wallet (see [Deployment](./docs/deploy-onchain.md)). The contract
-> address is **never fabricated**; it is a typed placeholder until a genuine
-> deployment exists.
+> **Deployment status:** **DEPLOYED — LIVE on Midnight Preprod.** Contract:
+> `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b`
+> (finalized in block `2418897`). See
+> [Preprod deployment](#preprod-deployment--contract-address) for the on-chain
+> explorer link and details.
+
+---
+
+## Demo video
+
+> **Level 4 reviewers:** watch the CrediFi demo walkthrough here:
+>
+> [▶ Watch the CrediFi Demo](https://youtu.be/Iemfqh_MUbs)
+>
+> *(Demo walkthrough of the CrediFi loan-eligibility flow.)*
 
 ---
 
@@ -68,6 +78,22 @@ the criteria, while the applicant reveals **only** a yes/no eligibility summary.
   produce genuine results — no fabricated outcomes.
 - **CI/CD** (.github/workflows) that compiles the contract, regenerates ZK
   bindings, and runs all tests/builds on every push.
+
+---
+
+## Tech stack
+
+- **Smart contract:** [Compact](https://docs.midnight.network/compact)
+  (`credifi.compact` + `schnorr.compact`), compiled to ZK IR with the Compact
+  devtools (0.31.1).
+- **Contract SDK:** `@midnight-ntwrk/compact-runtime`,
+  `midnight-js-contracts`, `wallet-sdk` — wired to the Midnight Preprod indexer
+  and RPC.
+- **Cryptography:** Schnorr signatures over Jubjub, verified in-circuit.
+- **Backend runtime:** Node.js ≥ 22, TypeScript.
+- **Frontend:** React + Vite demo web app running the compiled contract
+  in-process.
+- **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
 
@@ -182,8 +208,10 @@ or proof. This is enforced and proven by the contract privacy tests.
 
 ## Roadmap / deferred
 
-- **Real on-chain deployment** on Preprod (proof server + funded wallet) and set
-  `CONTRACT_ADDRESS`.
+- ~~**Real on-chain deployment** on Preprod~~ — **DONE:** contract live on
+  Preprod at `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b`;
+  `CONTRACT_ADDRESS` is set in the configs (see
+  [Preprod deployment](#preprod-deployment--contract-address)).
 - **Lace wallet** integration for genuine on-chain submissions.
 - Issuer runs as a trusted **backend service** (the mock issuer's deterministic
   secret is simulation-only and must never live in client code).
@@ -217,6 +245,8 @@ npm run frontend:test   # engine + app smoke tests
 A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to
 `main` and pull request:
 
+[![CI](https://github.com/poojakohinkar06-creator/credifi-midnight-level4/actions/workflows/ci.yml/badge.svg)](https://github.com/poojakohinkar06-creator/credifi-midnight-level4/actions/workflows/ci.yml)
+
 1. Installs the pinned Compact devtools + compiler (0.31.1).
 2. `npm ci`, then compiles the Compact contract to regenerate the managed
    bindings and zkir artifacts.
@@ -236,43 +266,50 @@ npm run frontend:dev   # http://localhost:5173
 
 The dashboard guides you through **connect wallet → financial credential →
 lender requirement → outcome**, computing genuine eligibility results from the
-real compiled circuit (the exact income stays witness-only). A **demo video** is
-planned; see [Roadmap](#roadmap--deferred) and `LEVEL4_CHECKLIST.md`.
+real compiled circuit (the exact income stays witness-only). See
+[▶ Demo video](#demo-video) for the walkthrough.
 
 ## Preprod deployment & contract address
 
-On-chain deployment on Midnight **Preprod** is documented in
-[docs/deploy-onchain.md](./docs/deploy-onchain.md) but is **not yet executed** —
-it requires a running proof server (`midnight_bn254`, needs Docker) and a funded
-Preprod wallet, then wiring the provider stack needed by `midnight-js-contracts`
-4.x.
+**Status: DEPLOYED.** The CrediFi contract is live on Midnight **Preprod** and
+was verified on-chain (contract state readable through the Preprod indexer;
+contract admin present). It was deployed with a single
+`DEPLOY_CONFIRM=true npm run deploy` run — the address below comes from the real
+`deployContract()` result, never fabricated.
 
-Per the project's honesty rules the contract address is **never fabricated**:
+| Field                  | Value |
+| ---------------------- | ------------------------------------------------------------ |
+| Network                | Midnight **Preprod** |
+| Contract address       | `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b` |
+| Deployment transaction | `60f0ddeed366d71c9de496c538ceedc79be695c73ab7841874824cdf46351943` |
+| Finalized block        | `2418897` |
+| Deployment status      | **DEPLOYED** |
 
-- `CONTRACT_ADDRESS` in `contract/src/config.ts` and `frontend/src/config.ts`
-  retains the placeholder `TODO_PASTE_DEPLOYED_CONTRACT_ADDRESS_AFTER_DEPLOY`.
-- `docs/contract-address.txt` records the truthful "not deployed yet" status.
-- `npm run deploy` runs a readiness preflight and reports the true environment
-  state instead of emitting a fake address.
+**Explorer:** [View the deployed CrediFi contract on the Midnight Preprod explorer](https://preprod.midnightexplorer.com/contracts/82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b)
 
-Once a real deployment exists, the genuine address is pasted into those configs
-and recorded in `docs/contract-address.txt`.
+### Deployment screenshot
+
+![CrediFi deployed on Midnight Preprod](./screenshots/preprod-deployment.png)
+
+`CONTRACT_ADDRESS` was written to `contract/src/config.ts` and
+`frontend/src/config.ts`, and the address recorded in `docs/contract-address.txt`,
+only after the on-chain read-back of the deployed contract state succeeded.
 
 ## X (Twitter) profile
 
-A project X profile is planned but **not yet created** — the handle/social URL
-is intentionally left blank here so no fabricated link is recorded. Track this
-under **MANUAL ACTION REQUIRED** in `LEVEL4_CHECKLIST.md`.
+🐦 **Follow the build:** [@KohinkarPo29284 on X](https://x.com/KohinkarPo29284)
+(also linked at the top of this README).
 
 ---
 
 ## Honesty note
 
-This repository does **not** fabricate deployment results. Until a genuine
-Preprod deployment exists, `CONTRACT_ADDRESS` is a typed placeholder and the
-deploy CLI reports the true readiness state rather than emitting a fake address.
-All results shown by the demo are computed by the **real compiled contract**, not
-mocked.
+This repository does **not** fabricate deployment results. A genuine Preprod
+deployment now exists, and `CONTRACT_ADDRESS` (in `contract/src/config.ts` and
+`frontend/src/config.ts`) plus `docs/contract-address.txt` contain the real
+address taken from the successful `deployContract()` result after on-chain
+verification. All results shown by the demo are computed by the **real compiled
+contract**, not mocked.
 
 ## License
 

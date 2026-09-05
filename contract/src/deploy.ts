@@ -185,7 +185,7 @@ async function deploy(): Promise<void> {
     const { providers, compiledContract } = buildProviders(ctx, password);
     const initialPrivateState = deployPrivateState(deriveAdminSecret(seed));
 
-    console.log("\n[CrediFi] Deploying CrediFi contract to Preprod...");
+    console.log(`\n[CrediFi] Deploying CrediFi contract to ${NETWORK_ID}...`);
     const deployed = await deployContract(providers, {
       compiledContract,
       privateStateId: "credifiPrivateState",
