@@ -297,7 +297,7 @@ only after the on-chain read-back of the deployed contract state succeeded.
 
 ## X (Twitter) profile
 
-🐦 **Follow the build:** [@KohinkarPo29284 on X](https://x.com/KohinkarPo29284)
+🐦 **Follow the build:** https://x.com/CrediFiApp
 (also linked at the top of this README).
 
 ---
