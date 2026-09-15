@@ -1,10 +1,15 @@
 // ---------------------------------------------------------------------------
-// App wallet-flow tests.
+// App tests: state-based navigation, wallet connection and the eligibility
+// result notifications.
 //
 // Production code contains NO mock/simulated wallet. To exercise the real
 // DApp Connector code path we inject a FAKE wallet connector into
 // `window.midnight` HERE, in the test environment only. This satisfies
 // "keep mocks only inside tests" — the production browser flow never uses it.
+//
+// Navigation note: CrediFi opens views/tabs by switching React state. Clicking
+// a navigation button shows the destination view directly — no scrollIntoView,
+// no anchor scrolling. These tests assert the views/tabs that open.
 // ---------------------------------------------------------------------------
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -15,6 +20,21 @@ import type { ConnectedAPI, InitialAPI } from "@midnight-ntwrk/dapp-connector-ap
 const connectButtons = () => screen.getAllByRole("button", { name: /^connect wallet$/i });
 // The in-flow wallet panel button is rendered after the navbar one.
 const walletConnectButton = () => connectButtons()[connectButtons().length - 1];
+
+// "Check Eligibility" appears in the navbar and (on the home view) the hero.
+// Nav buttons all OPEN views directly (state-based navigation).
+const allCheckButtons = () => screen.getAllByRole("button", { name: /^check eligibility$/i });
+
+// Clicking the navbar "Check Eligibility" opens the eligibility view directly.
+function openEligibility() {
+  fireEvent.click(allCheckButtons()[0]);
+}
+
+function openNav(label: RegExp | string) {
+  const el = screen.getAllByRole("button", { name: label })[0];
+  expect(el).toBeInTheDocument();
+  fireEvent.click(el);
+}
 
 type ConnectorOverrides = {
   networkId?: string;
@@ -61,14 +81,51 @@ function clearConnector() {
   delete (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight;
 }
 
-describe("CrediFi wallet connection (real DApp Connector)", () => {
-  afterEach(() => {
-    clearConnector();
+describe("CrediFi navigation (direct view/tab opening, no scrolling)", () => {
+  afterEach(() => clearConnector());
+
+  it("initial view is Home, not the wallet/eligibility panels", () => {
+    render(<App />);
+    expect(screen.getAllByText("Prove your eligibility.").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Connect a Midnight-compatible wallet")).not.toBeInTheDocument();
   });
 
-  it("TEST 1: initial state is disconnected (no wallet connected)", () => {
-    clearConnector();
+  it("Check Eligibility opens the eligibility view directly", () => {
     render(<App />);
+    openEligibility();
+    expect(screen.getAllByText("Connect a Midnight-compatible wallet").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Prove your eligibility.")).not.toBeInTheDocument();
+  });
+
+  it("Home returns to the home view", () => {
+    render(<App />);
+    openEligibility();
+    openNav(/^home$/i);
+    expect(screen.getAllByText("Prove your eligibility.").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Connect a Midnight-compatible wallet")).not.toBeInTheDocument();
+  });
+
+  it("Privacy opens the privacy view directly", () => {
+    render(<App />);
+    openNav(/^privacy$/i);
+    expect(screen.getAllByText("Your financial information stays private.").length).toBeGreaterThan(0);
+  });
+
+  it("Dashboard / History / Certificate route to the eligibility view when not connected", () => {
+    render(<App />);
+    for (const label of [/^dashboard$/i, /^history$/i, /^certificate$/i]) {
+      openNav(label);
+      expect(screen.getAllByText("Connect a Midnight-compatible wallet").length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("CrediFi wallet connection (real DApp Connector)", () => {
+  afterEach(() => clearConnector());
+
+  it("TEST 1: initial state is disconnected (no wallet connected)", () => {
+    render(<App />);
+    openEligibility();
     expect(screen.getByText("Connect a Midnight-compatible wallet")).toBeInTheDocument();
     expect(screen.queryByText(/Wallet Connected/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^mn_/)).not.toBeInTheDocument();
@@ -77,6 +134,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 2 + 3 + 4: clicking Connect Wallet triggers the connector and shows the real address after approval", async () => {
     const { connector } = installFakeConnector({ address: "mn_shield_addr_testRealAddress123456" });
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
 
@@ -112,6 +170,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
     (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight = { mnLace: connector };
 
     render(<App />);
+    openEligibility();
     fireEvent.click(walletConnectButton());
 
     expect((await screen.findAllByText(/Connecting\.\.\./i)).length).toBeGreaterThan(0);
@@ -124,6 +183,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 5: user rejection leaves the app disconnected and shows a message", async () => {
     installFakeConnector({ rejectWithCode: "Rejected" });
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
 
@@ -135,6 +195,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 6: no wallet detected leaves the app disconnected", async () => {
     clearConnector();
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
 
@@ -145,6 +206,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 7: no fake/demo/simulated address ever appears after connecting", async () => {
     installFakeConnector({ address: "mn_shield_addr_testAuthentic987654" });
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
     await screen.findByText(/Wallet Connected/i);
@@ -158,6 +220,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 7b: wrong network is reported and the app stays disconnected", async () => {
     installFakeConnector({ networkId: "mainnet" });
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
 
@@ -168,6 +231,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   it("TEST 8: Disconnect returns to the disconnected state", async () => {
     installFakeConnector({ address: "mn_shield_addr_testDisconnectMe" });
     render(<App />);
+    openEligibility();
 
     fireEvent.click(walletConnectButton());
     await screen.findByText(/Wallet Connected/i);
@@ -180,8 +244,6 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
   });
 
   it("TEST 9: wallet injected under an unknown/UUID key is still discovered by enumeration (real CAIP-372 wallets)", async () => {
-    // Official docs warn that wallets may inject their Initial API under a UUID
-    // rather than the well-known `mnLace` key. Detection must enumerate.
     const connector: InitialAPI = {
       rdns: "io.example.wallet",
       name: "Example Wallet",
@@ -202,6 +264,7 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
     };
 
     render(<App />);
+    openEligibility();
     fireEvent.click(walletConnectButton());
 
     expect(await screen.findByText(/Wallet Connected/i)).toBeInTheDocument();
@@ -232,14 +295,14 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
       } as unknown as ConnectedAPI)),
     };
     (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight = {
-      "other": other,
-      "mnLace": lace,
+      other,
+      mnLace: lace,
     };
 
     render(<App />);
+    openEligibility();
     fireEvent.click(walletConnectButton());
 
-    // The Lace connector (not the "other" one) should have been used.
     expect(lace.connect).toHaveBeenCalledWith("preprod");
     expect(other.connect).not.toHaveBeenCalled();
     await screen.findByText(/Wallet Connected/i);
@@ -263,9 +326,65 @@ describe("CrediFi wallet connection (real DApp Connector)", () => {
     (window as unknown as { midnight?: Record<string, InitialAPI> }).midnight = { mnLace: connector };
 
     render(<App />);
+    openEligibility();
     fireEvent.click(walletConnectButton());
 
     await screen.findByText(/Wallet Connected/i);
     expect(screen.getAllByText(shortenAddress("mn_unshield_fallback9a8b7c6d5e")).length).toBeGreaterThan(0);
+  });
+});
+
+describe("eligibility result notifications", () => {
+  afterEach(() => clearConnector());
+
+  /** Connects, runs the real verification and waits for the notification to appear. */
+  async function connectAndRun(opts: { address?: string; monthlyIncome?: number }) {
+    installFakeConnector({ address: opts.address ?? "mn_shield_addr_testNotificationWallet" });
+    render(<App />);
+    openEligibility();
+    fireEvent.click(walletConnectButton());
+    await screen.findByText(/Wallet Connected/i);
+
+    if (opts.monthlyIncome !== undefined) {
+      const incomeInput = screen.getByPlaceholderText("e.g. 65000");
+      fireEvent.change(incomeInput, { target: { value: String(opts.monthlyIncome) } });
+    }
+
+    // Step 1 complete -> step 2 (verify privately) opens.
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+
+    // Run the real verification (navbar + run button both say Check Eligibility).
+    const run = screen.getAllByRole("button", { name: /^check eligibility$/i });
+    fireEvent.click(run[run.length - 1]);
+
+    await waitFor(
+      () =>
+        expect(
+          screen.getAllByText(/Congratulations! You are Eligible\.|Sorry, You are Not Eligible\./i).length,
+        ).toBeGreaterThan(0),
+      { timeout: 15000 },
+    );
+  }
+
+  it("eligible: prominent success notification, then the eligible result UI", async () => {
+    await connectAndRun({ monthlyIncome: 65000 });
+
+    const title = screen.getByText("🎉 Congratulations! You are Eligible.");
+    expect(title).toBeInTheDocument();
+    expect(title.closest(".notification-success")).not.toBeNull();
+    expect(screen.getAllByRole("status").length).toBeGreaterThan(0);
+    // Existing eligibility result UI is shown for the eligible applicant.
+    expect(screen.getAllByText("Eligible").length).toBeGreaterThan(0);
+  });
+
+  it("not eligible: prominent warning notification, then the declined result UI", async () => {
+    await connectAndRun({ monthlyIncome: 30000 });
+
+    const title = screen.getByText("Sorry, You are Not Eligible.");
+    expect(title).toBeInTheDocument();
+    expect(title.closest(".notification-error")).not.toBeNull();
+    expect(screen.getAllByRole("alert").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not Eligible").length).toBeGreaterThan(0);
+    expect(screen.queryByText("🎉 Congratulations! You are Eligible.")).not.toBeInTheDocument();
   });
 });

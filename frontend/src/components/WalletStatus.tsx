@@ -21,7 +21,7 @@ const INSTALL_WALLET_URL = "https://docs.midnight.network/relnotes/lace";
 
 export function WalletStatus({ wallet, connected, isConnecting, error, onConnect, onDisconnect }: WalletStatusProps) {
   return (
-    <section className="constrain">
+    <section className="constrain" aria-label="Wallet connection">
       <h2 className="flow-heading">
         <span className="flow-heading-icon" aria-hidden>
           <WalletIcon size={20} />
@@ -61,6 +61,9 @@ function IdleState({ onConnect }: { onConnect: () => void }) {
           <span className="status-label">Connect Wallet</span>
           <span className="status-value">Connect a Midnight-compatible wallet</span>
         </div>
+        <p className="status-provider">
+          Network: <strong>Midnight Preprod</strong> · DApp Connector
+        </p>
         <Button variant="primary" size="sm" onClick={onConnect} icon={<WalletIcon />}>
           Connect wallet
         </Button>
@@ -77,12 +80,16 @@ function ConnectingState() {
       </span>
       <div>
         <div className="wallet-status-row">
-          <span className="status-label">Connecting...</span>
+          <span className="status-label">Connecting…</span>
           <span className="status-value">Approve the connection in your wallet.</span>
         </div>
-        <Button variant="primary" size="sm" disabled>
-          Connecting...
-        </Button>
+        <p className="status-provider" aria-hidden>
+          Connecting&hellip;
+        </p>
+        <div className="skeleton skeleton-row" aria-hidden>
+          <span className="skeleton-block skeleton-md" />
+          <span className="skeleton-block skeleton-sm" />
+        </div>
       </div>
     </div>
   );
@@ -100,10 +107,14 @@ function ConnectedState({ wallet, onDisconnect }: { wallet: WalletState; onDisco
           <span className="addr">{shortenAddress(wallet.address)}</span>
         </div>
         <p className="status-provider">
-          {walletLabel()} · network {wallet.networkId}
+          {walletLabel()} · network <strong>Midnight Preprod</strong>
         </p>
+        <div className="wallet-status-meta" aria-label="Connection details">
+          <span className="badge badge-verified">Connected</span>
+          <span className="badge badge-eligible">Preprod</span>
+        </div>
       </div>
-      <Button variant="ghost" size="sm" onClick={onDisconnect}>
+      <Button variant="ghost" size="sm" onClick={onDisconnect} aria-label="Disconnect wallet">
         Disconnect
       </Button>
     </div>
@@ -172,7 +183,7 @@ function ErrorState({
   })();
 
   return (
-    <div className="wallet-status-error">
+    <div className="wallet-status-error" role="alert">
       <span className="status-badge bad" aria-hidden>
         {body.icon}
       </span>

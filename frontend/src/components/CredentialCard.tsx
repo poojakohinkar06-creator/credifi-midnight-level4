@@ -1,6 +1,5 @@
 import { Card } from "./Card";
-import { Button } from "./Button";
-import { ArrowRightIcon, CheckIcon, LockIcon } from "./Icons";
+import { LockIcon } from "./Icons";
 
 type CredentialCardProps = {
   issuerName: string;
@@ -9,8 +8,6 @@ type CredentialCardProps = {
   previousDefault: boolean;
   onIncomeChange: (value: number) => void;
   onDefaultChange: (value: boolean) => void;
-  onContinue: () => void;
-  continueLabel?: string;
 };
 
 export function CredentialCard({
@@ -20,8 +17,6 @@ export function CredentialCard({
   previousDefault,
   onIncomeChange,
   onDefaultChange,
-  onContinue,
-  continueLabel = "Continue to Requirements",
 }: CredentialCardProps) {
   return (
     <Card className="credential-card" highlight>
@@ -29,25 +24,29 @@ export function CredentialCard({
         <div className="card-title-wrap">
           <h3>Your Financial Details</h3>
           <span className="verified-pill">
-            <CheckIcon size={14} />
-            {verified ? "Verified" : "Pending"}
+            <LockIcon size={13} />
+            {verified ? "Private" : "Pending"}
           </span>
         </div>
         <p className="issuer-name">{issuerName}</p>
+        <p className="card-sub">Entered on your device — never shared publicly.</p>
       </div>
 
       <div className="form-grid">
         <label className="field">
           <span className="field-label">Monthly Income</span>
-          <input
-            type="number"
-            min={0}
-            max={65535}
-            value={monthlyIncome}
-            placeholder="e.g. 65000"
-            onChange={(e) => onIncomeChange(Number(e.target.value))}
-          />
-          <span className="field-hint">Your exact income used for the proof</span>
+          <div className="input-prefix">
+            <span className="input-prefix-char">₹</span>
+            <input
+              type="number"
+              min={0}
+              max={65535}
+              value={monthlyIncome}
+              placeholder="e.g. 65000"
+              onChange={(e) => onIncomeChange(Number(e.target.value))}
+            />
+          </div>
+          <span className="field-hint">Your exact income stays private</span>
           <span className="field-example">Example: ₹65,000</span>
         </label>
 
@@ -76,14 +75,8 @@ export function CredentialCard({
 
       <p className="flow-note">
         <LockIcon size={15} />
-        <span>Your income is used to generate the proof but never revealed publicly.</span>
+        <span>Your exact income and history are used privately and never revealed to the lender.</span>
       </p>
-
-      <div className="card-foot">
-        <Button variant="primary" onClick={onContinue} icon={<ArrowRightIcon size={16} />}>
-          {continueLabel}
-        </Button>
-      </div>
     </Card>
   );
 }
