@@ -15,7 +15,6 @@ coverage/
 contract/.env.preprod
 **/.DS_Store
 .vscode/
-contract/src/managed/
 .midnight-state.json
 *.key
 .pnp
