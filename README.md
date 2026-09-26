@@ -3,10 +3,16 @@
 
 🐦 **Follow the build:** https://x.com/CrediFiApp
 
-CrediFi is a **Level 4 Midnight Builder** project. It lets a user prove to a
+CrediFi is a **Midnight Level 5 – Full Moon** project. It lets a user prove to a
 lender that a *verified* financial credential satisfies a lending requirement —
 **income ≥ minimumIncome** and **no previous default** — without ever revealing
 the exact income or the private financial history.
+
+> **Milestone: Midnight Level 5 – Full Moon.** The same CrediFi MVP from Level 4
+> has been **extended and validated with real Preprod users** — see
+> [Level 5 – Full Moon](#level-5--full-moon),
+> [User Testing & Onboarding](#user-testing--onboarding), and
+> [User Feedback](#user-feedback).
 
 The eligibility evaluation runs entirely inside a **zero-knowledge circuit**.
 Only the *outcome* (which requirements were satisfied and whether the user is
@@ -23,11 +29,166 @@ flag are **witness-only** and never cross the private/public boundary.
 
 ## Demo video
 
-> **Level 4 reviewers:** watch the CrediFi demo walkthrough here:
+> ### ▶ CrediFi – Level 5 Full Moon Demo
 >
-> [▶ Watch the CrediFi Demo](https://youtu.be/Iemfqh_MUbs)
+> [▶ Watch the CrediFi – Level 5 Full Moon Demo](https://youtu.be/naV4jou_Ut0)
 >
-> *(Demo walkthrough of the CrediFi loan-eligibility flow.)*
+> *(Full walkthrough of the Level 5 CrediFi experience: 1AM Wallet connection on
+> Midnight Preprod, eligibility verification, the Eligible / Not Eligible
+> notification, the Eligibility Certificate, the Privacy Dashboard, and
+> Verification History.)*
+
+**Previous milestone demo (Level 4):**
+[▶ Watch the Level 4 CrediFi Demo](https://youtu.be/Iemfqh_MUbs)
+*(Superseded by the Level 5 demo above; kept for milestone history.)*
+
+---
+
+## Live demo
+
+**The smart contract is live on Midnight Preprod** and readable on-chain:
+
+- **Preprod explorer (deployed contract):**
+  [View the deployed CrediFi contract on the Midnight Preprod explorer](https://preprod.midnightexplorer.com/contracts/82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b)
+- **Web app (runs against Preprod, wallet connection required):** the CrediFi
+  frontend is run locally in the browser and connects to a real Midnight
+  **Preprod** wallet through the DApp Connector:
+
+  ```bash
+  npm install
+  npm run contract:compile
+  npm run frontend:dev      # http://localhost:5173
+  ```
+
+See [Getting started](#getting-started) for the full command list and
+[Preprod deployment & contract address](#preprod-deployment--contract-address)
+for the deployment record.
+
+---
+
+## Level 5 – Full Moon
+
+**Midnight Level 5 – Full Moon** extends the Level 4 CrediFi MVP rather than
+replacing it. The core guarantee is unchanged and still the centre of the
+project: a user proves **income ≥ minimumIncome** and **no previous default** to
+a lender **without revealing the exact income or the private financial
+history**, because the evaluation runs inside a zero-knowledge circuit and only
+the binary outcome reaches the ledger.
+
+What changed for Level 5:
+
+- **The same MVP was put in front of real users.** 50+ Preprod users installed a
+  wallet, connected it to the CrediFi app on Midnight **Preprod**, ran a real
+  eligibility verification, and returned structured feedback.
+- **The product surface was rebuilt around that feedback** — a full Dashboard
+  with dedicated Privacy, History, Lender and Certificate views, direct page
+  navigation instead of anchor scrolling, explicit Eligible / Not Eligible
+  notifications, and accessibility improvements. See
+  [Updated Level 5 Features](#updated-level-5-features).
+- **Wallet onboarding was made explicit** with 1AM Wallet on Preprod, documented
+  end to end in [User Testing & Onboarding](#user-testing--onboarding).
+- **Feedback was collected systematically** through a Google Form and published
+  as evidence in a Google Sheet — see [User Feedback](#user-feedback).
+- **Documentation was brought up to date** with the delivered Level 5 build and
+  its test suite.
+
+Submission status is tracked in the
+[Level 5 Submission Checklist](#level-5-submission-checklist).
+
+---
+
+## Updated Level 5 Features
+
+All of the following are implemented in the current build.
+
+| Feature | Where |
+| --- | --- |
+| **Direct page navigation** — nav/footer items are real buttons that switch views directly; no anchor (`href="#…"`) or `scrollIntoView` navigation remains | `frontend/src/App.tsx`, `frontend/src/lib/navigation.ts`, `frontend/src/components/Navbar.tsx` |
+| **Dashboard** — overview with wallet / eligibility / verification / network stat cards, verification status, privacy status and recent activity | `frontend/src/components/Dashboard.tsx`, `DashboardTabs.tsx` |
+| **Eligibility verification** — the real compiled Compact contract is executed in-process and the result is read back out of contract state (never mocked) | `frontend/src/engine.ts` |
+| **Eligible / Not Eligible notifications** — a live-region toast on every result, with distinct success / error messaging | `frontend/src/lib/navigation.ts` (`resultNotification`), `components/Notification.tsx` |
+| **Verification History** — every verification recorded this session, with requirement, result, status and expandable technical details | `frontend/src/components/VerificationHistory.tsx` |
+| **Eligibility Certificate** — a printable / save-as-PDF certificate summarising the requirement, outcome, lender reference, result id and holder hash | `frontend/src/components/EligibilityCertificate.tsx` |
+| **Privacy Dashboard** — a side-by-side "never shared" vs "can be verified" view of exactly what leaves the private boundary | `frontend/src/components/PrivacyDashboard.tsx` |
+| **Wallet connection** — real Midnight **DApp Connector** (CAIP-372) integration; connectors are discovered by enumeration, so 1AM Wallet and Lace both work, with network and rejection handling | `frontend/src/wallet.ts`, `components/WalletStatus.tsx` |
+| **Responsive, user-friendly UI** — hand-written CSS with breakpoints at 980px / 760px / 420px, a mobile navigation menu, dark-mode support and touch press feedback | `frontend/src/styles.css` |
+| **Accessibility improvements** — `aria-live` result announcements, `role="status"` / `role="alert"` regions, `aria-current` / `aria-pressed` state on nav and tabs, labelled landmarks and lists, decorative glyphs hidden from assistive tech, visible `:focus-visible` rings and `prefers-reduced-motion` support | `components/Notification.tsx`, `Navbar.tsx`, `DashboardTabs.tsx`, `ProgressSteps.tsx`, `styles.css` |
+
+---
+
+## User Testing & Onboarding
+
+The Level 5 test round was run with real users against Midnight **Preprod**.
+The intended onboarding path is:
+
+### 1. Install 1AM Wallet
+
+- Official site: <https://1am.xyz/>
+- Chrome Web Store:
+  [1AM Wallet](https://chromewebstore.google.com/detail/1am/bphnkdkcnfhompoegfpgnkidcjfbojjp)
+
+### 2. Switch the wallet to Midnight Preprod
+
+1AM Wallet must be pointed at the **Midnight Preprod** network before CrediFi
+can be used. CrediFi requests the Preprod network id (`NETWORK_ID` in
+`frontend/src/config.ts`) and shows a `wrong-network` error if the wallet is on
+any other network, so testers are guided to Preprod up front.
+
+### 3. Run the CrediFi app
+
+```bash
+npm install
+npm run contract:compile
+npm run frontend:dev      # http://localhost:5173
+```
+
+### 4. Connect the wallet
+
+Press **Connect wallet** in the app. CrediFi discovers the injected connector
+on `window.midnight` by enumeration (CAIP-372), so the 1AM Wallet connector is
+picked up automatically — no wallet-specific hardcoding. The 1AM Wallet approval
+popup then authorises the connection, and the app reads the genuine wallet
+address (shielded address when available).
+
+Users may decline the request; the app surfaces a `rejected` state and never
+fabricates an address. A mocked connector exists **only** inside the automated
+test environment (`frontend/src/test/App.test.tsx`) and is never used in the
+browser flow.
+
+### 5. Test CrediFi eligibility verification
+
+Once connected, the tester supplies a financial credential and a lender
+requirement (**minimum income** + **no prior default**), and runs the
+verification. The result is produced by the real compiled circuit, followed by
+an **Eligible** or **Not Eligible** notification. The tester can then open the
+Dashboard to review the Privacy Dashboard, the Verification History entry, and
+the Eligibility Certificate for that result.
+
+### 6. Complete the user feedback form
+
+Finally, testers completed the structured user feedback form covering
+onboarding clarity, wallet setup, the verification flow and overall usability.
+Responses are collected and published as evidence in
+[User Feedback](#user-feedback).
+
+---
+
+## User Feedback
+
+Structured user feedback was collected from the Level 5 Preprod test round.
+
+- **Collection method:** a **Google Form** covering onboarding, 1AM Wallet
+  setup, the Preprod network, wallet connection, the eligibility verification
+  flow, and overall usability.
+- **Evidence:** responses are maintained in a **Google Sheet**:
+  [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing)
+- **Participants:** **50+ Preprod users** took part in the test round and
+  submitted feedback.
+
+> The individual responses and participating wallet addresses live in the
+> linked Google Sheet. They are deliberately **not** duplicated here, so that
+> the feedback data is not forked into the repository and cannot drift from the
+> source of truth.
 
 ---
 
@@ -66,7 +227,7 @@ the criteria, while the applicant reveals **only** a yes/no eligibility summary.
 ## Highlights
 
 - **Private-by-design contract** written in [Compact](https://docs.midnight.network/compact),
-  verified by 17 contract tests proving both the eligibility matrix **and** that
+  verified by 30 contract tests proving both the eligibility matrix **and** that
   witness inputs stay off-ledger.
 - **Schnorr attestations over Jubjub** signed by a deterministic mock credential
   issuer and verified **inside the ZK circuit** (`schnorr.compact`).
@@ -91,8 +252,12 @@ the criteria, while the applicant reveals **only** a yes/no eligibility summary.
   and RPC.
 - **Cryptography:** Schnorr signatures over Jubjub, verified in-circuit.
 - **Backend runtime:** Node.js ≥ 22, TypeScript.
-- **Frontend:** React + Vite demo web app running the compiled contract
-  in-process.
+- **Frontend:** React + Vite web app running the compiled contract in-process,
+  with a tabbed Dashboard, Eligibility Certificate, Privacy Dashboard and
+  Verification History.
+- **Wallet:** Midnight **DApp Connector** (`@midnight-ntwrk/dapp-connector-api`,
+  CAIP-372) — connectors are discovered by enumeration, so
+  [1AM Wallet](https://1am.xyz/) and Lace both work.
 - **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`).
 
 ---
@@ -110,15 +275,20 @@ the criteria, while the applicant reveals **only** a yes/no eligibility summary.
 │   │   ├── mock-issuer.ts     # deterministic mock credential issuer
 │   │   ├── config.ts          # Preprod runtime config
 │   │   ├── deploy.ts          # honest deploy/verify preflight CLI
-│   │   └── test/              # eligibility + privacy unit tests
+│   │   └── test/              # eligibility, privacy, wallet-state + sync-mode tests
 │   └── tsconfig*.json
-├── frontend/                  # React + Vite demo web app
+├── frontend/                  # React + Vite web app
 │   └── src/
 │       ├── engine.ts          # runs the compiled contract in-process
-│       ├── App.tsx            # demo dashboard UI
-│       ├── wallet.ts          # simulated wallet connectivity
-│       └── test/              # engine + app smoke tests
+│       ├── wallet.ts          # real Midnight DApp Connector (CAIP-372) connectivity
+│       ├── App.tsx            # state-based routing + top-level app state
+│       ├── config.ts          # Preprod network id + contract address
+│       ├── lib/               # navigation, eligibility + formatting helpers
+│       ├── components/        # dashboard, certificate, privacy, history, nav, toasts
+│       ├── styles.css         # design system, responsive + a11y rules
+│       └── test/              # engine, navigation, navbar, dashboard + app tests
 ├── docs/                      # setup, architecture, deployment
+├── screenshots/               # Preprod deployment evidence
 └── .github/workflows/ci.yml   # CI pipeline
 ```
 
@@ -149,13 +319,13 @@ npm install
 # 2. Compile the Compact contract (regenerates managed bindings + zkir)
 npm run contract:compile
 
-# 3. Run the contract tests (17 tests: eligibility + privacy)
+# 3. Run the contract tests (30 tests: eligibility, privacy, wallet state, sync mode)
 npm run contract:test
 
 # 4. Build both packages
 npm run build
 
-# 5. Run the frontend engine tests
+# 5. Run the frontend test suite (59 tests: engine, navigation, dashboard, app)
 npm run frontend:test
 
 # 6. Start the demo web app
@@ -212,7 +382,14 @@ or proof. This is enforced and proven by the contract privacy tests.
   Preprod at `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b`;
   `CONTRACT_ADDRESS` is set in the configs (see
   [Preprod deployment](#preprod-deployment--contract-address)).
-- **Lace wallet** integration for genuine on-chain submissions.
+- ~~**Browser wallet integration**~~ — **DONE for Level 5:** the app connects to
+  a real Midnight wallet through the DApp Connector, tested with
+  [1AM Wallet](https://1am.xyz/) on Preprod (see
+  [User Testing & Onboarding](#user-testing--onboarding)). Still deferred:
+  submitting the verification itself as an on-chain transaction from the browser,
+  rather than executing the compiled contract in-process.
+- Persistent verification history across sessions (currently in-memory for the
+  active session only).
 - Issuer runs as a trusted **backend service** (the mock issuer's deterministic
   secret is simulation-only and must never live in client code).
 
@@ -220,25 +397,42 @@ or proof. This is enforced and proven by the contract privacy tests.
 
 ## Testing
 
-The core guarantees — correctness **and** privacy — are verified continuously:
+The core guarantees — correctness **and** privacy — are verified continuously.
+**89 tests** in total: 30 contract + 59 frontend.
 
-- **Contract tests (17)** in `contract/src/test/`:
-  - `eligibility.test.ts` — the full eligibility matrix, multi-lender records,
-    issuer authentication, and admin governance.
-  - `privacy.test.ts` — proves the exact income, default flag, and signature
+- **Contract tests (30)** in `contract/src/test/`:
+  - `eligibility.test.ts` (14) — the full eligibility matrix, multi-lender
+    records, issuer authentication, and admin governance.
+  - `privacy.test.ts` (3) — proves the exact income, default flag, and signature
     material never appear in any serialized public state, and that distinct
     users are keyed by 32-byte identity hashes.
-- **Frontend engine tests (7)** in `frontend/src/test/engine.test.ts` — re-run
-  the same matrix through the actual compiled contract in a node environment
-  (needed because the WASM runtime does not run inside jsdom), plus a privacy
-  guarantee on the returned outcome shape.
-- **App smoke tests (2)** in `frontend/src/test/App.test.tsx` — the dashboard
-  renders all sections and the simulated wallet connects.
+  - `wallet-state.test.ts` (8) — wallet state handling and persistence.
+  - `sync-mode.test.ts` (5) — the safe wallet sync mode.
+- **Frontend tests (59)** in `frontend/src/test/`:
+  - `engine.test.ts` (7) — re-run the same matrix through the actual compiled
+    contract in a node environment (needed because the WASM runtime does not run
+    inside jsdom), plus a privacy guarantee on the returned outcome shape.
+  - `navigation.test.ts` (11) — direct view/tab opening for every nav target in
+    both connected and disconnected states, plus the Eligible / Not Eligible
+    notification payloads (including a check that no income figure leaks into
+    the notification text).
+  - `dashboard-components.test.tsx` (11) — the Dashboard, DashboardTabs, Privacy
+    Dashboard, Verification History, Risk score, Lender Portal, Eligibility
+    Certificate and Profile sections render correctly.
+  - `navbar.test.tsx` (4) — all nav labels present, **no `href="#"` anchor
+    navigation**, and every nav control is a `type="button"` button.
+  - `eligibility.test.ts` (8) — risk-category derivation and the satisfied / unmet
+    requirement labels.
+  - `App.test.tsx` (18) — end-to-end app behaviour: direct page navigation,
+    real DApp Connector connection (approval, rejection, not-detected,
+    wrong-network, shielded→unshielded address fallback, connector enumeration)
+    and the end-to-end Eligible / Not Eligible notifications.
 
 ```bash
-npm run contract:test   # 17 tests
-npm run frontend:test   # engine + app smoke tests
+npm run contract:test   # 30 tests
+npm run frontend:test   # 59 tests
 ```
+
 
 ## CI/CD
 
@@ -256,18 +450,35 @@ A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to
 This mirrors the validated local toolchain so every change is verified against
 real compiled contract artifacts.
 
-## Demo
+## Running the app locally
 
-Run the local, in-browser demo of the official compiled contract:
+Run the local, in-browser app of the official compiled contract:
 
 ```bash
 npm run frontend:dev   # http://localhost:5173
 ```
 
-The dashboard guides you through **connect wallet → financial credential →
-lender requirement → outcome**, computing genuine eligibility results from the
-real compiled circuit (the exact income stays witness-only). See
-[▶ Demo video](#demo-video) for the walkthrough.
+The app guides you through **connect wallet → financial credential → lender
+requirement → outcome**, computing genuine eligibility results from the real
+compiled circuit (the exact income stays witness-only). After a result you get an
+**Eligible / Not Eligible** notification and a full **Dashboard** with the
+**Privacy Dashboard**, the **Verification History** entry, and the printable
+**Eligibility Certificate**.
+
+See [▶ CrediFi – Level 5 Full Moon Demo](https://youtu.be/naV4jou_Ut0) for the
+recorded walkthrough, and [Live demo](#live-demo) for how to run it against a
+Preprod wallet.
+
+## Repository
+
+- **GitHub:** <https://github.com/poojakohinkar06-creator/credifi-midnight-level4>
+- **Default branch:** `main`
+- **CI:** GitHub Actions on every push and pull request
+  ([`ci.yml`](https://github.com/poojakohinkar06-creator/credifi-midnight-level4/actions/workflows/ci.yml))
+- **History:** 27 commits, spanning the contract, the zero-knowledge privacy
+  tests, the web app, wallet integration, and the Level 5 product and
+  documentation work — i.e. well over the 20 meaningful commits expected for
+  this milestone.
 
 ## Preprod deployment & contract address
 
@@ -302,6 +513,21 @@ only after the on-chain read-back of the deployed contract state succeeded.
 
 ---
 
+## Level 5 Submission Checklist
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | **Public GitHub repository** | ✅ | [poojakohinkar06-creator/credifi-midnight-level4](https://github.com/poojakohinkar06-creator/credifi-midnight-level4) on `main`, with CI running on every push ([badge in CI/CD](#cicd)) |
+| 2 | **Live Preprod MVP / demo** | ✅ | Contract **deployed and verified on Midnight Preprod** at `82f0731b…ee0c0b` — [Preprod explorer](#preprod-deployment--contract-address). The web app runs against Preprod via `npm run frontend:dev` and connects to a real Preprod wallet — see [Live demo](#live-demo) |
+| 3 | **50+ Preprod users** | ✅ | 50+ users onboarded and ran a real verification — see [User Testing & Onboarding](#user-testing--onboarding) |
+| 4 | **Structured user feedback** | ✅ | Collected through a structured Google Form covering onboarding, wallet setup, network, connection and the verification flow — see [User Feedback](#user-feedback) |
+| 5 | **Google Sheet feedback evidence** | ✅ | [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing) |
+| 6 | **Updated documentation** | ✅ | This README updated for Level 5 (milestone, features, onboarding, feedback, checklist) plus the `docs/` guides — see [Documentation](#documentation) |
+| 7 | **Demo video** | ✅ | [▶ CrediFi – Level 5 Full Moon Demo](https://youtu.be/naV4jou_Ut0) — see [Demo video](#demo-video) |
+| 8 | **20+ meaningful commits** | ✅ | 27 commits on `main` covering contract + ZK tests, web app, wallet integration, and the Level 5 feature and documentation work — see [Repository](#repository) |
+
+---
+
 ## Honesty note
 
 This repository does **not** fabricate deployment results. A genuine Preprod
@@ -311,6 +537,12 @@ address taken from the successful `deployContract()` result after on-chain
 verification. All results shown by the demo are computed by the **real compiled
 contract**, not mocked.
 
+The same applies to the Level 5 testing claims: no individual user response,
+testimonial or wallet address is reproduced in this README. The user feedback
+figures and the participating wallet addresses live only in the linked
+[Google Sheet](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing),
+which is the single source of truth for that data.
+
 ## License
 
-Private project — internal use for the Midnight Builder Level 4 milestone.
+Private project — internal use for the Midnight Builder Level 5 – Full Moon milestone.
