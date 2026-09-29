@@ -10,8 +10,8 @@ the exact income or the private financial history.
 
 > **Milestone: Midnight Level 5 – Full Moon.** The same CrediFi MVP from Level 4
 > has been **extended and validated with real Preprod users** — see
-> [Level 5 – Full Moon](#level-5--full-moon),
-> [User Testing & Onboarding](#user-testing--onboarding), and
+> [Level 5 – Full Moon](#level-5-full-moon),
+> [User Testing & Onboarding](#user-testing-onboarding), and
 > [User Feedback](#user-feedback).
 
 The eligibility evaluation runs entirely inside a **zero-knowledge circuit**.
@@ -22,7 +22,7 @@ flag are **witness-only** and never cross the private/public boundary.
 > **Deployment status:** **DEPLOYED — LIVE on Midnight Preprod.** Contract:
 > `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b`
 > (finalized in block `2418897`). See
-> [Preprod deployment](#preprod-deployment--contract-address) for the on-chain
+> [Preprod deployment](#preprod-deployment-contract-address) for the on-chain
 > explorer link and details.
 
 ---
@@ -61,7 +61,7 @@ flag are **witness-only** and never cross the private/public boundary.
   ```
 
 See [Getting started](#getting-started) for the full command list and
-[Preprod deployment & contract address](#preprod-deployment--contract-address)
+[Preprod deployment & contract address](#preprod-deployment-contract-address)
 for the deployment record.
 
 ---
@@ -77,16 +77,16 @@ the binary outcome reaches the ledger.
 
 What changed for Level 5:
 
-- **The same MVP was put in front of real users.** 50+ Preprod users installed a
-  wallet, connected it to the CrediFi app on Midnight **Preprod**, ran a real
-  eligibility verification, and returned structured feedback.
+- **The same MVP was put in front of 56 testers** during the Level 5 feedback
+  round. The collected responses document wallet setup, connection,
+  verification-flow usability, privacy understanding, and overall experience.
 - **The product surface was rebuilt around that feedback** — a full Dashboard
   with dedicated Privacy, History, Lender and Certificate views, direct page
   navigation instead of anchor scrolling, explicit Eligible / Not Eligible
   notifications, and accessibility improvements. See
   [Updated Level 5 Features](#updated-level-5-features).
 - **Wallet onboarding was made explicit** with 1AM Wallet on Preprod, documented
-  end to end in [User Testing & Onboarding](#user-testing--onboarding).
+  end to end in [User Testing & Onboarding](#user-testing-onboarding).
 - **Feedback was collected systematically** through a Google Form and published
   as evidence in a Google Sheet — see [User Feedback](#user-feedback).
 - **Documentation was brought up to date** with the delivered Level 5 build and
@@ -176,19 +176,57 @@ Responses are collected and published as evidence in
 ## User Feedback
 
 Structured user feedback was collected from the Level 5 Preprod test round.
+**The response data is now mirrored in this repository**, so a reviewer can
+verify the participant count without leaving the repo.
+
+| Evidence | Where |
+| --- | --- |
+| **Repository evidence — the 56 wallet addresses, timestamps and format audit** | [`USERS.md`](./USERS.md) |
+| **Repository evidence — what testers said, the counts, and what changed** | [`docs/FEEDBACK.md`](./docs/FEEDBACK.md) |
+| **Repository evidence — how to actually run and test the app** | [`docs/USAGE.md`](./docs/USAGE.md) |
+| **External source of truth — the response sheet** | [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing) |
+| **External wallet check — Subscan (aggregate only)** | [`USERS.md` § Wallet verification](./USERS.md#wallet-verification-subscan) |
 
 - **Collection method:** a **Google Form** covering onboarding, 1AM Wallet
   setup, the Preprod network, wallet connection, the eligibility verification
   flow, and overall usability.
-- **Evidence:** responses are maintained in a **Google Sheet**:
-  [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing)
-- **Participants:** **50+ Preprod users** took part in the test round and
-  submitted feedback.
+- **Participants:** **56 responses**, containing **56 unique wallet addresses**
+  and **56 unique submitter emails**, with **0 blank rows**, tested between
+  2026-09-15 and 2026-09-29. This exceeds the Level 5 requirement of 50 user
+  wallet addresses. Source of truth: the response export
+  `(Responses) (2).xlsx`. Three older snapshots of the same form exist; they
+  were reconciled against it and none of their numbers are used — see
+  [`USERS.md` § Data provenance](./USERS.md#data-provenance-and-limitations).
+- **Wallet check:** the team ran a **manual Subscan check** of those 56 unique
+  addresses against **Midnight Preprod Subscan**. The result was recorded as a
+  tally: **53 found, 3 not found**.
 
-> The individual responses and participating wallet addresses live in the
-> linked Google Sheet. They are deliberately **not** duplicated here, so that
-> the feedback data is not forked into the repository and cannot drift from the
-> source of truth.
+### Read the numbers honestly
+
+- **This is not a claim of 56 on-chain verified users.** It is one manual
+  Subscan check, recorded as a **53/3 aggregate tally**.
+- **No individual address is marked verified or unverified.** The per-address
+  output of the check does not exist in this repository, so the **3 unmatched
+  addresses are intentionally left unidentified** — they were not inferred from
+  address formatting, row order, or older exports. See
+  [`USERS.md` § Wallet verification](./USERS.md#wallet-verification-subscan).
+- Being found on Subscan means the address is **indexed by the explorer**. It
+  does **not** prove the person ran the CrediFi application, and **no
+  transaction or activity evidence** is claimed anywhere in this repository.
+- **52 of 56** addresses match the `mn_addr_preprod1…` string shape and **4 do
+  not** (2 carry no Preprod prefix, 1 is truncated, 1 is free text). This is a
+  **format observation only** — it is never used as a verification signal, and
+  is not cross-referenced against the 53/3 tally.
+- **No feature in this repository was implemented *because of* this feedback.**
+  The Level 5 product rebuild (`c32d06f`, 2026-09-15 04:15 UTC) landed *before*
+  the first response (2026-09-15 12:04), and the only post-feedback commit
+  (`afd8640`) touches `README.md` only. See
+  [`docs/FEEDBACK.md` § What We Changed](./docs/FEEDBACK.md#what-we-changed).
+
+> The individual free-text responses stay in the linked Google Sheet as the
+> source of truth. The wallet addresses, timestamps and derived statistics are
+> mirrored in [`USERS.md`](./USERS.md) / [`docs/FEEDBACK.md`](./docs/FEEDBACK.md)
+> so the participant count is verifiable in-repo.
 
 ---
 
@@ -287,7 +325,10 @@ the criteria, while the applicant reveals **only** a yes/no eligibility summary.
 │       ├── components/        # dashboard, certificate, privacy, history, nav, toasts
 │       ├── styles.css         # design system, responsive + a11y rules
 │       └── test/              # engine, navigation, navbar, dashboard + app tests
-├── docs/                      # setup, architecture, deployment
+├── docs/                      # setup, architecture, deployment, Level 5 evidence
+│   ├── FEEDBACK.md            # Level 5 user feedback: heard, counted, and what changed
+│   └── USAGE.md               # how to run and test the MVP on Preprod
+├── USERS.md                   # Level 5 test users + wallet evidence (56 responses)
 ├── screenshots/               # Preprod deployment evidence
 └── .github/workflows/ci.yml   # CI pipeline
 ```
@@ -368,11 +409,31 @@ or proof. This is enforced and proven by the contract privacy tests.
 
 ## Documentation
 
+**Level 5 evidence (in this repository):**
+
+- [`USERS.md`](./USERS.md) — the **56 test users**, their wallet addresses,
+  timestamps, address-format audit and the Subscan verification boundary
+- [`docs/FEEDBACK.md`](./docs/FEEDBACK.md) — **what testers said**, the
+  quantitative summary, user-requested improvements, what changed, the
+  commit evidence, and the limitations
+- [`docs/USAGE.md`](./docs/USAGE.md) — **how to run and test the MVP on Preprod**,
+  including troubleshooting, known limitations, and where the code and this
+  README disagree
+
+**Project documentation:**
+
 - [Setup guide](./docs/setup.md) — detailed environment setup
 - [Architecture](./docs/architecture.md) — contract, witnesses, engine design
 - [MVP scope](./docs/mvp-scope.md) — the five attestation approaches delivered
 - [Deployment (Preprod)](./docs/deploy-onchain.md) — how a real on-chain
   deployment is performed (proof-server prerequisites, wallet, wiring)
+
+**External evidence:**
+
+- [Level 5 user feedback — Google Sheet](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing)
+  — the response source of truth behind `USERS.md` and `docs/FEEDBACK.md`
+- [▶ CrediFi – Level 5 Full Moon Demo](https://youtu.be/naV4jou_Ut0) — recorded walkthrough
+- [Deployed contract on the Midnight Preprod explorer](https://preprod.midnightexplorer.com/contracts/82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b)
 
 ---
 
@@ -381,11 +442,11 @@ or proof. This is enforced and proven by the contract privacy tests.
 - ~~**Real on-chain deployment** on Preprod~~ — **DONE:** contract live on
   Preprod at `82f0731b0b4c5c81c44e0c14b21a2c1ee930a13109df422cf8b60bf954ee0c0b`;
   `CONTRACT_ADDRESS` is set in the configs (see
-  [Preprod deployment](#preprod-deployment--contract-address)).
+  [Preprod deployment](#preprod-deployment-contract-address)).
 - ~~**Browser wallet integration**~~ — **DONE for Level 5:** the app connects to
   a real Midnight wallet through the DApp Connector, tested with
   [1AM Wallet](https://1am.xyz/) on Preprod (see
-  [User Testing & Onboarding](#user-testing--onboarding)). Still deferred:
+  [User Testing & Onboarding](#user-testing-onboarding)). Still deferred:
   submitting the verification itself as an on-chain transaction from the browser,
   rather than executing the compiled contract in-process.
 - Persistent verification history across sessions (currently in-memory for the
@@ -475,10 +536,18 @@ Preprod wallet.
 - **Default branch:** `main`
 - **CI:** GitHub Actions on every push and pull request
   ([`ci.yml`](https://github.com/poojakohinkar06-creator/credifi-midnight-level4/actions/workflows/ci.yml))
-- **History:** 27 commits, spanning the contract, the zero-knowledge privacy
-  tests, the web app, wallet integration, and the Level 5 product and
-  documentation work — i.e. well over the 20 meaningful commits expected for
-  this milestone.
+- **History:** **28 commits** (`git rev-list --count HEAD`), spanning the
+  contract, the zero-knowledge privacy tests, the web app, wallet integration,
+  and the Level 5 product and documentation work — i.e. well over the 20
+  meaningful commits expected for this milestone. Verify with:
+
+  ```bash
+  git rev-list --count HEAD   # -> 28
+  git log --oneline --decorate
+  ```
+
+  The per-commit breakdown (code / tests / docs / scaffolding) is in
+  [`docs/FEEDBACK.md` § Commit evidence](./docs/FEEDBACK.md#commit-evidence).
 
 ## Preprod deployment & contract address
 
@@ -518,13 +587,13 @@ only after the on-chain read-back of the deployed contract state succeeded.
 | # | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
 | 1 | **Public GitHub repository** | ✅ | [poojakohinkar06-creator/credifi-midnight-level4](https://github.com/poojakohinkar06-creator/credifi-midnight-level4) on `main`, with CI running on every push ([badge in CI/CD](#cicd)) |
-| 2 | **Live Preprod MVP / demo** | ✅ | Contract **deployed and verified on Midnight Preprod** at `82f0731b…ee0c0b` — [Preprod explorer](#preprod-deployment--contract-address). The web app runs against Preprod via `npm run frontend:dev` and connects to a real Preprod wallet — see [Live demo](#live-demo) |
-| 3 | **50+ Preprod users** | ✅ | 50+ users onboarded and ran a real verification — see [User Testing & Onboarding](#user-testing--onboarding) |
-| 4 | **Structured user feedback** | ✅ | Collected through a structured Google Form covering onboarding, wallet setup, network, connection and the verification flow — see [User Feedback](#user-feedback) |
-| 5 | **Google Sheet feedback evidence** | ✅ | [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing) |
-| 6 | **Updated documentation** | ✅ | This README updated for Level 5 (milestone, features, onboarding, feedback, checklist) plus the `docs/` guides — see [Documentation](#documentation) |
+| 2 | **Live Preprod MVP / demo** | ✅ | Contract **deployed and verified on Midnight Preprod** at `82f0731b…ee0c0b` — [Preprod explorer](#preprod-deployment-contract-address). The web app runs against Preprod via `npm run frontend:dev` and connects to a real Preprod wallet — see [Live demo](#live-demo) |
+| 3 | **50+ Preprod users** | ✅ | **56 responses / 56 unique wallet addresses / 56 unique emails / 0 blank rows**, all from the current export `(Responses) (2).xlsx`. A **manual Subscan check** of those 56 addresses found **53** and did not find **3** — see [`USERS.md`](./USERS.md) and [User Feedback](#user-feedback). *Caveat: this is a 53/3 aggregate tally from one manual check, not per-address evidence, and not 56 on-chain verified users.* |
+| 4 | **Structured user feedback** | ✅ | Collected through a structured Google Form covering onboarding, wallet setup, network, connection and the verification flow. Every count on this page was recalculated from the current export — full analysis in [`docs/FEEDBACK.md`](./docs/FEEDBACK.md) ("What We Heard", quantitative summary, and "What We Changed" cross-referenced against `git log`) |
+| 5 | **Google Sheet feedback evidence** | ✅ | [CrediFi – Level 5 user feedback (Google Sheet)](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing), mirrored in-repo as [`USERS.md`](./USERS.md) + [`docs/FEEDBACK.md`](./docs/FEEDBACK.md) |
+| 6 | **Updated documentation** | ✅ | This README (milestone, features, onboarding, feedback, checklist) plus [`USERS.md`](./USERS.md), [`docs/FEEDBACK.md`](./docs/FEEDBACK.md), [`docs/USAGE.md`](./docs/USAGE.md) and the existing `docs/` guides — see [Documentation](#documentation) |
 | 7 | **Demo video** | ✅ | [▶ CrediFi – Level 5 Full Moon Demo](https://youtu.be/naV4jou_Ut0) — see [Demo video](#demo-video) |
-| 8 | **20+ meaningful commits** | ✅ | 27 commits on `main` covering contract + ZK tests, web app, wallet integration, and the Level 5 feature and documentation work — see [Repository](#repository) |
+| 8 | **20+ meaningful commits** | ✅ | **28 commits** on `main`, verifiable with `git rev-list --count HEAD` (0 merges). Composition: 9 code, 7 test, 7 docs-only, 5 scaffolding — see [`docs/FEEDBACK.md` § Commit evidence](./docs/FEEDBACK.md#commit-evidence) and [Repository](#repository) |
 
 ---
 
@@ -537,11 +606,48 @@ address taken from the successful `deployContract()` result after on-chain
 verification. All results shown by the demo are computed by the **real compiled
 contract**, not mocked.
 
-The same applies to the Level 5 testing claims: no individual user response,
-testimonial or wallet address is reproduced in this README. The user feedback
-figures and the participating wallet addresses live only in the linked
-[Google Sheet](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing),
-which is the single source of truth for that data.
+The same standard is applied to the Level 5 testing claims, in both directions:
+
+**What is verified.** The 56 wallet addresses, timestamps and counts in
+[`USERS.md`](./USERS.md) and [`docs/FEEDBACK.md`](./docs/FEEDBACK.md) are
+reproducible from the current response export, which is also mirrored in the
+linked
+[Google Sheet](https://docs.google.com/spreadsheets/d/1yYpRJhoTLcjaDhWp4KIBGeo7d0WnhsDOUtQmGLtmjI8/edit?usp=sharing).
+The commit count is reproducible with `git rev-list --count HEAD`.
+
+**What is explicitly not claimed.**
+
+- **This repository does not claim 56 on-chain verified users.** The Subscan
+  figure (**53 found, 3 not found**) is one **manual check recorded as an
+  aggregate tally**. The per-address output is not stored here, so no individual
+  address is marked found or not found, and the **3 unmatched addresses are
+  intentionally left unidentified** — they were not inferred from address
+  formatting, row order, or older exports.
+- Being found on Subscan means the address is **indexed by the explorer**. It
+  does **not** prove the person used CrediFi, and **no transaction or activity
+  evidence** is claimed.
+- **4 of the 56 addresses do not match the `mn_addr_preprod1…` string shape.**
+  That is a **format observation only**, never a verification signal, and it is
+  not cross-referenced against the 53/3 tally. All 56 responses are retained
+  regardless.
+- **No feature is claimed to have been built because of this feedback.** The
+  Level 5 rebuild (`c32d06f`, 2026-09-15 04:15 UTC) predates the first response
+  (2026-09-15 12:04), and the only post-feedback commit (`afd8640`) changes
+  `README.md` only. The overlapping features are documented as **pre-existing
+  Level 5 work** in [`docs/FEEDBACK.md`](./docs/FEEDBACK.md#what-we-changed).
+- **No free-text testimonial is reproduced in this README.** Quotations live in
+  `docs/FEEDBACK.md`, attributed to their response rows.
+
+**Corrections made in this revision** (found by checking the README against the
+repository and the exports, not assumed): the commit count was stated as 27 and
+is actually **28**; the participant count was "50+" and is precisely **56**; the
+repository layout omitted `USERS.md` and the two new `docs/` files. All three are
+fixed above, and 8 pre-existing broken internal anchor links were repaired.
+Separately, `docs/USAGE.md` records one **stale string in the application
+itself** — the in-app footer at `frontend/src/App.tsx:190` still says the Preprod
+deployment "is pending", which contradicts the deployment record. That is an
+application-code string and is left untouched here, but it is documented rather
+than hidden.
 
 ## License
 
